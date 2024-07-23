@@ -1,6 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import os
 
 # Load the image
@@ -23,6 +24,7 @@ contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 # Draw contours on the original image for visualization
 contour_image = new_image.copy()
 cv2.drawContours(contour_image, contours, -1, (0, 255, 0), 2)
+
 # Filter contours to find crossed red lines
 crossed_lines = []
 for cnt in contours:
@@ -32,6 +34,7 @@ for cnt in contours:
 # Draw filtered contours on the image
 filtered_contour_image = new_image.copy()
 cv2.drawContours(filtered_contour_image, crossed_lines, -1, (255, 0, 0), 2)
+
 # Annotate each cell and measure
 cell_measurements = []
 cell_id = 1
