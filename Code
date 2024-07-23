@@ -1,0 +1,77 @@
+import cv2
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+
+# Load the image
+image_path = '/content/Input.png'
+new_image = cv2.imread(image_path)
+
+# Convert the image to grayscale
+gray = cv2.cvtColor(new_image, cv2.COLOR_BGR2GRAY)
+
+# Define red color range
+lower_red = np.array([0, 0, 200])
+upper_red = np.array([50, 50, 255])
+
+# Create a mask to isolate red lines
+mask = cv2.inRange(new_image, lower_red, upper_red)
+
+# Find contours of the red lines
+contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Draw contours on the original image for visualization
+contour_image = new_image.copy()
+cv2.drawContours(contour_image, contours, -1, (0, 255, 0), 2)
+# Filter contours to find crossed red lines
+crossed_lines = []
+for cnt in contours:
+    if cv2.contourArea(cnt) > 50:  # This threshold can be adjusted
+        crossed_lines.append(cnt)
+
+# Draw filtered contours on the image
+filtered_contour_image = new_image.copy()
+cv2.drawContours(filtered_contour_image, crossed_lines, -1, (255, 0, 0), 2)
+# Annotate each cell and measure
+cell_measurements = []
+cell_id = 1
+
+for i, cnt in enumerate(crossed_lines):
+    # Get bounding box for the contour
+    x, y, w, h = cv2.boundingRect(cnt)
+
+    # Measure the length and width
+    length = max(w, h)
+    width = min(w, h)
+    length_width_ratio = length / width
+
+    # Annotate the image
+    center_x = x + w // 2
+    center_y = y + h // 2
+
+    cv2.circle(new_image, (center_x, center_y), max(w, h) // 2, (0, 255, 0), 2)  # Green circle
+    cv2.putText(new_image, str(cell_id), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)  # Blue number
+
+    # Store measurements
+    cell_measurements.append({
+        "Cell ID": cell_id,
+        "Length": length,
+        "Width": width,
+        "Length/Width Ratio": length_width_ratio
+    })
+
+    cell_id += 1
+
+# Save the annotated image
+annotated_image_path = '/content/annotated_image.png'
+cv2.imwrite(annotated_image_path, new_image)
+
+# Create DataFrame from cell measurements
+new_df = pd.DataFrame(cell_measurements)
+
+# Save DataFrame to an Excel file in an existing directory
+new_output_excel_path = './cell_measurements_newmet.xlsx'
+new_df.to_excel(new_output_excel_path, index=False)
+
+# Display the DataFrame
+new_df
